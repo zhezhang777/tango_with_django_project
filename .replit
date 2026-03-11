@@ -1,0 +1,19 @@
+entrypoint = "manage.py"
+modules = ["python-3.11"]
+
+run = "python manage.py runserver 0.0.0.0:8080"
+
+[nix]
+channel = "stable-23_11"
+
+[gitHubImport]
+requiredFiles = [".replit", "replit.nix"]
+
+[[ports]]
+localPort = 8080
+externalPort = 80
+
+[deployment]
+build = "python manage.py collectstatic --noinput && python manage.py migrate --noinput"
+run = "gunicorn studyplanner.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
+deploymentTarget = "cloudrun"
