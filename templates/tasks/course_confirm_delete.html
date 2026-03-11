@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Course{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-sm-8 col-md-6 col-lg-5">
+      <div class="sp-card p-4 text-center">
+        <i class="bi bi-exclamation-triangle-fill text-danger icon-xl" aria-hidden="true"></i>
+        <h1 class="h4 fw-bold mt-3">Delete Course</h1>
+        <p class="text-muted mt-2">
+          Are you sure you want to delete <strong>{{ course.name }}</strong>?
+        </p>
+        <p class="text-muted small">
+          Tasks linked to this course will remain but will no longer have a course assigned.
+        </p>
+        <div class="d-flex justify-content-center gap-3 mt-4">
+          <a href="{% url 'tasks:course_list' %}" class="btn btn-outline-secondary">Cancel</a>
+          <form method="post" action="{% url 'tasks:course_delete' course.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">
+              <i class="bi bi-trash me-1" aria-hidden="true"></i>Yes, Delete
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

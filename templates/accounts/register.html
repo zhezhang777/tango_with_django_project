@@ -1,0 +1,197 @@
+{% extends "accounts/auth_base.html" %}
+{% load static %}
+
+{% block title %}Create Account - Study Planner{% endblock %}
+{% block meta_description %}Sign up for Study Planner and start managing your assignments.{% endblock %}
+
+{% block auth_content %}
+  {# WCAG 2.4.6: Descriptive heading #}
+  <h2 class="h5 fw-bold mb-1 text-center" id="register-heading">Create your account</h2>
+  <p class="text-center small mb-4 text-sp-muted">
+    Free for students - no credit card required
+  </p>
+
+  {# WCAG 3.3.2: Instruction about required fields #}
+  <p class="field-required-note">
+    Fields marked <abbr title="required" aria-label="required">*</abbr> are required.
+  </p>
+
+  <form
+    method="post"
+    action="{% url 'accounts:register' %}"
+    novalidate
+    aria-labelledby="register-heading"
+    id="register-form"
+  >
+    {% csrf_token %}
+
+    {# 鈹�鈹� Non-field errors 鈹�鈹� #}
+    {% if form.non_field_errors %}
+    <div
+      class="alert alert-danger d-flex align-items-start gap-2 mb-3"
+      role="alert"
+      aria-live="assertive"
+      aria-atomic="true"
+    >
+      <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
+      <div>
+        <strong>Please fix the errors below.</strong>
+        {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {# 鈹�鈹� Username 鈹�鈹� #}
+    <div class="mb-3">
+      <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">
+        Username <abbr title="required" aria-hidden="true">*</abbr>
+      </label>
+      {# aria-describedby wires the hint text to the input for screen readers #}
+      <input
+        type="text"
+        name="username"
+        id="{{ form.username.id_for_label }}"
+        class="form-control {% if form.username.errors %}is-invalid{% endif %}"
+        placeholder="Choose a username"
+        autocomplete="username"
+        autofocus
+        required
+        aria-required="true"
+        aria-describedby="username-hint {% if form.username.errors %}username-error{% endif %}"
+        maxlength="150"
+        value="{{ form.username.value|default:'' }}"
+      />
+      <div id="username-hint" class="form-text">
+        Letters, digits and @/./+/-/_ only. Max 150 characters.
+      </div>
+      {% if form.username.errors %}
+      <div
+        class="field-error"
+        id="username-error"
+        role="alert"
+        aria-live="polite"
+      >
+        <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
+        {% for error in form.username.errors %}{{ error }}{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    {# 鈹�鈹� Email 鈹�鈹� #}
+    <div class="mb-3">
+      <label for="{{ form.email.id_for_label }}" class="form-label fw-semibold">
+        Email address <abbr title="required" aria-hidden="true">*</abbr>
+      </label>
+      <input
+        type="email"
+        name="email"
+        id="{{ form.email.id_for_label }}"
+        class="form-control {% if form.email.errors %}is-invalid{% endif %}"
+        placeholder="your@university.edu"
+        autocomplete="email"
+        required
+        aria-required="true"
+        aria-describedby="{% if form.email.errors %}email-error{% endif %}"
+        value="{{ form.email.value|default:'' }}"
+      />
+      {% if form.email.errors %}
+      <div class="field-error" id="email-error" role="alert" aria-live="polite">
+        <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
+        {% for error in form.email.errors %}{{ error }}{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    {# 鈹�鈹� Password 鈹�鈹� #}
+    <div class="mb-3">
+      <label for="{{ form.password1.id_for_label }}" class="form-label fw-semibold">
+        Password <abbr title="required" aria-hidden="true">*</abbr>
+      </label>
+      <div class="input-group">
+        <input
+          type="password"
+          name="password1"
+          id="{{ form.password1.id_for_label }}"
+          class="form-control {% if form.password1.errors %}is-invalid{% endif %}"
+          placeholder="Create a password"
+          autocomplete="new-password"
+          required
+          aria-required="true"
+          aria-describedby="pw-hint {% if form.password1.errors %}pw1-error{% endif %}"
+        />
+        <button
+          class="btn btn-outline-secondary pw-toggle-btn"
+          type="button"
+          aria-label="Show password"
+          aria-controls="{{ form.password1.id_for_label }}"
+          aria-pressed="false"
+          data-input-id="{{ form.password1.id_for_label }}"
+        >
+          <i class="bi bi-eye" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div id="pw-hint" class="form-text">
+        At least 8 characters. Cannot be entirely numeric.
+      </div>
+      {% if form.password1.errors %}
+      <div class="field-error" id="pw1-error" role="alert" aria-live="polite">
+        <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
+        {% for error in form.password1.errors %}{{ error }}{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    {# 鈹�鈹� Confirm Password 鈹�鈹� #}
+    <div class="mb-4">
+      <label for="{{ form.password2.id_for_label }}" class="form-label fw-semibold">
+        Confirm password <abbr title="required" aria-hidden="true">*</abbr>
+      </label>
+      <div class="input-group">
+        <input
+          type="password"
+          name="password2"
+          id="{{ form.password2.id_for_label }}"
+          class="form-control {% if form.password2.errors %}is-invalid{% endif %}"
+          placeholder="Confirm your password"
+          autocomplete="new-password"
+          required
+          aria-required="true"
+          aria-describedby="pw2-hint {% if form.password2.errors %}pw2-error{% endif %}"
+          id="id_password2"
+        />
+        <button
+          class="btn btn-outline-secondary pw-toggle-btn"
+          type="button"
+          aria-label="Show confirm password"
+          aria-controls="{{ form.password2.id_for_label }}"
+          aria-pressed="false"
+          data-input-id="{{ form.password2.id_for_label }}"
+          data-match-target-id="{{ form.password1.id_for_label }}"
+        >
+          <i class="bi bi-eye" aria-hidden="true"></i>
+        </button>
+      </div>
+      {# Live match feedback (WCAG 3.3.1) 鈥?updated by JS #}
+      <div id="pw2-hint" class="form-text" aria-live="polite" aria-atomic="true"></div>
+      {% if form.password2.errors %}
+      <div class="field-error" id="pw2-error" role="alert" aria-live="polite">
+        <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
+        {% for error in form.password2.errors %}{{ error }}{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+      <i class="bi bi-person-plus me-2" aria-hidden="true"></i>Create Account
+    </button>
+  </form>
+{% endblock %}
+
+{% block auth_footer %}
+  Already have an account?
+  <a href="{% url 'accounts:login' %}" class="fw-semibold">Log in here</a>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/auth.js' %}" defer></script>
+{% endblock %}

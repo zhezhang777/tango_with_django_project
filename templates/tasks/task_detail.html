@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ task.title }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-9 col-lg-7">
+
+      <!-- Breadcrumb -->
+      <nav aria-label="Breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+          <li class="breadcrumb-item"><a href="{% url 'tasks:task_list' %}">Tasks</a></li>
+          <li class="breadcrumb-item active" aria-current="page">{{ task.title|truncatechars:40 }}</li>
+        </ol>
+      </nav>
+
+      <div class="sp-card p-4">
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+          <div>
+            <h1 class="h4 fw-bold mb-1 {% if task.is_done %}text-decoration-line-through text-muted{% endif %}">
+              {{ task.title }}
+            </h1>
+            <div class="d-flex flex-wrap gap-2">
+              <!-- Priority -->
+              <span class="badge badge-priority-{{ task.get_priority_display|lower }} rounded-pill">
+                {{ task.get_priority_display }} priority
+              </span>
+              <!-- Status -->
+              <span class="badge rounded-pill
+                {% if task.status == 'done' %}bg-success
+                {% elif task.status == 'in_progress' %}bg-info text-dark
+                {% else %}bg-secondary{% endif %}">
+                {{ task.get_status_display }}
+              </span>
+              {% if task.is_overdue %}
+                <span class="badge bg-danger rounded-pill">Overdue</span>
+              {% endif %}
+            </div>
+          </div>
+          <!-- Actions -->
+          <div class="d-flex gap-2 flex-shrink-0">
+            <a href="{% url 'tasks:task_edit' task.pk %}" class="btn btn-sm btn-outline-primary" aria-label="Edit this task">
+              <i class="bi bi-pencil me-1" aria-hidden="true"></i>Edit
+            </a>
+            <button class="btn btn-sm btn-outline-danger"
+                    data-bs-toggle="modal" data-bs-target="#deleteModal"
+                    aria-label="Delete this task">
+              <i class="bi bi-trash me-1" aria-hidden="true"></i>Delete
+            </button>
+          </div>
+        </div>
+
+        <!-- Metadata grid -->
+        <dl class="row mb-4">
+          {% if task.course %}
+          <dt class="col-sm-3 text-muted fw-normal">Course</dt>
+          <dd class="col-sm-9">
+            <span class="fw-semibold" style="color:{{ task.course.color }}">
+              <i class="bi bi-circle-fill me-1 icon-dot" aria-hidden="true"></i>
+              {{ task.course.name }}{% if task.course.code %} ({{ task.course.code }}){% endif %}
+            </span>
+          </dd>
+          {% endif %}
+
+          <dt class="col-sm-3 text-muted fw-normal">Due date</dt>
+          <dd class="col-sm-9">
+            {% if task.due_date %}
+              <span class="{% if task.is_overdue %}overdue-label{% endif %}">
+                {{ task.due_date|date:"l, F j, Y, g:i a" }}
+              </span>
+              {% if task.days_until_due is not None and not task.is_done %}
+                <span class="text-muted small ms-2">
+                  {% if task.days_until_due < 0 %}
+                    ({{ task.days_until_due|stringformat:"d"|slice:"1:" }} day{{ task.days_until_due|stringformat:"d"|slice:"1:"|length|pluralize }} overdue)
+                  {% elif task.days_until_due == 0 %}(due today)
+                  {% elif task.days_until_due == 1 %}(tomorrow)
+                  {% else %}(in {{ task.days_until_due }} days){% endif %}
+                </span>
+              {% endif %}
+            {% else %}
+              <span class="text-muted">No due date</span>
+            {% endif %}
+          </dd>
+
+          <dt class="col-sm-3 text-muted fw-normal">Created</dt>
+          <dd class="col-sm-9">{{ task.created_at|date:"F j, Y" }}</dd>
+
+          <dt class="col-sm-3 text-muted fw-normal">Last updated</dt>
+          <dd class="col-sm-9">{{ task.updated_at|date:"F j, Y, g:i a" }}</dd>
+        </dl>
+
+        <!-- Description -->
+        {% if task.description %}
+        <div class="border-top pt-3 mb-4">
+          <h2 class="h6 fw-semibold text-muted text-uppercase mb-2">Notes</h2>
+          <div class="text-secondary text-prewrap">{{ task.description }}</div>
+        </div>
+        {% endif %}
+
+        <!-- Toggle status button -->
+        <div class="border-top pt-3 d-flex gap-2">
+          <button
+            class="btn {% if task.is_done %}btn-outline-secondary{% else %}btn-success{% endif %} toggle-btn"
+            data-task-id="{{ task.pk }}"
+            data-url="{% url 'tasks:task_toggle' task.pk %}"
+            data-redirect="{% url 'tasks:task_detail' task.pk %}"
+            aria-pressed="{{ task.is_done|yesno:'true,false' }}"
+          >
+            <i class="bi {% if task.is_done %}bi-arrow-counterclockwise{% else %}bi-check-lg{% endif %} me-1" aria-hidden="true"></i>
+            {% if task.is_done %}Mark as To-Do{% else %}Mark as Done{% endif %}
+          </button>
+          <a href="{% url 'tasks:task_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Back to Tasks
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-modal="true" role="dialog">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h2 class="modal-title h6 fw-bold" id="deleteModalLabel">Delete Task</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete <strong>{{ task.title }}</strong>?</p>
+        <p class="text-muted small mb-0">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form method="post" action="{% url 'tasks:task_delete' task.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/tasks.js' %}" defer></script>
+{% endblock %}

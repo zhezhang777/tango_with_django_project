@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Courses{% endblock %}
+{% block meta_description %}View and manage your university courses in Study Planner.{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 fw-bold mb-0">Courses</h1>
+    <a href="{% url 'tasks:course_create' %}" class="btn btn-primary">
+      <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add Course
+    </a>
+  </div>
+
+  {% if courses %}
+  <div class="row g-3" role="list" aria-label="Course list">
+    {% for course in courses %}
+    <div class="col-12 col-sm-6 col-lg-4" role="listitem">
+      <div class="sp-card p-4 h-100" style="border-top: 4px solid {{ course.color }};">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <h2 class="h5 fw-bold mb-0">{{ course.name }}</h2>
+            {% if course.code %}
+              <span class="text-muted small">{{ course.code }}</span>
+            {% endif %}
+          </div>
+          <div class="d-flex gap-1">
+            <a href="{% url 'tasks:course_edit' course.pk %}" class="btn btn-sm btn-outline-secondary" aria-label="Edit {{ course.name }}">
+              <i class="bi bi-pencil" aria-hidden="true"></i>
+            </a>
+            <a href="{% url 'tasks:course_delete' course.pk %}" class="btn btn-sm btn-outline-danger" aria-label="Delete {{ course.name }}">
+              <i class="bi bi-trash" aria-hidden="true"></i>
+            </a>
+          </div>
+        </div>
+
+        <div class="mt-3 d-flex gap-4">
+          <div>
+            <div class="fw-bold">{{ course.task_count }}</div>
+            <div class="text-muted small">Total tasks</div>
+          </div>
+          <div>
+            <div class="fw-bold text-success">{{ course.done_count }}</div>
+            <div class="text-muted small">Completed</div>
+          </div>
+        </div>
+
+        {% if course.task_count %}
+        <div class="progress progress-sm mt-3" role="progressbar"
+             aria-valuenow="{{ course.done_count }}" aria-valuemin="0" aria-valuemax="{{ course.task_count }}"
+             aria-label="{{ course.name }} completion">
+          <div class="progress-bar bg-success"
+               style="width:{% widthratio course.done_count course.task_count 100 %}%"></div>
+        </div>
+        {% endif %}
+
+        <div class="mt-3">
+          <a href="{% url 'tasks:task_list' %}?course={{ course.pk }}" class="btn btn-sm btn-outline-primary w-100">
+            View tasks
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="sp-card p-5 text-center text-muted">
+    <i class="bi bi-book fs-1 d-block mb-3" aria-hidden="true"></i>
+    <h2 class="h5 fw-semibold">No courses yet</h2>
+    <p class="mb-3">Add your university courses to organise your tasks by subject.</p>
+    <a href="{% url 'tasks:course_create' %}" class="btn btn-primary">
+      <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add your first course
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

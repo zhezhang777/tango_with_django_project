@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+{% block meta_description %}Your Study Planner dashboard — track assignments and deadlines.{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div>
+      <h1 class="h3 fw-bold mb-0">Dashboard</h1>
+      <p class="text-muted mb-0 small">
+        Welcome back, <strong>{{ request.user.first_name|default:request.user.username }}</strong>!
+        {% now "l, F j" as today_str %}
+        &nbsp;·&nbsp; {{ today_str }}
+      </p>
+    </div>
+    <a href="{% url 'tasks:task_create' %}" class="btn btn-primary">
+      <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>New Task
+    </a>
+  </div>
+
+  <!-- ── Stat cards ── -->
+  <div class="row g-3 mb-4 stagger-children" aria-label="Task statistics">
+    <div class="col-6 col-md-3">
+      <div class="stat-card stat-card-total">
+        <i class="bi bi-list-task stat-icon" aria-hidden="true"></i>
+        <div class="stat-number" data-count="{{ stats.total }}">{{ stats.total }}</div>
+        <div class="stat-label">Total Tasks</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card stat-card-done">
+        <i class="bi bi-check-circle stat-icon" aria-hidden="true"></i>
+        <div class="stat-number" data-count="{{ stats.done }}">{{ stats.done }}</div>
+        <div class="stat-label">Completed</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card stat-card-progress">
+        <i class="bi bi-hourglass-split stat-icon" aria-hidden="true"></i>
+        <div class="stat-number" data-count="{{ stats.in_progress }}">{{ stats.in_progress }}</div>
+        <div class="stat-label">In Progress</div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="stat-card stat-card-overdue">
+        <i class="bi bi-exclamation-circle stat-icon" aria-hidden="true"></i>
+        <div class="stat-number" data-count="{{ stats.overdue }}">{{ stats.overdue }}</div>
+        <div class="stat-label">Overdue</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Progress bar ── -->
+  {% if stats.total %}
+  <div class="sp-card p-3 mb-4 animate-fade-in-up">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <span class="fw-semibold small">Overall Progress</span>
+      <span class="text-muted small">{{ stats.done }} of {{ stats.total }} completed</span>
+    </div>
+    <div class="progress progress-md"
+         role="progressbar"
+         aria-valuenow="{{ stats.completion_pct }}"
+         aria-valuemin="0" aria-valuemax="100"
+         aria-label="Task completion: {{ stats.completion_pct }}%">
+      <div class="progress-bar bg-success" style="width:{{ stats.completion_pct }}%"></div>
+    </div>
+    <div class="text-end mt-1 small fw-semibold text-sp-success">
+      {{ stats.completion_pct }}%
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="row g-4">
+
+    <!-- ── Due Soon ── -->
+    <div class="col-12 col-lg-6">
+      <div class="sp-card h-100">
+        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+          <h2 class="h6 fw-bold mb-0 d-flex align-items-center gap-2">
+            <i class="bi bi-clock-history text-primary" aria-hidden="true"></i>Due Soon
+          </h2>
+          <a href="{% url 'tasks:task_list' %}?group=week" class="btn btn-sm btn-outline-primary">View all</a>
+        </div>
+
+        {% if upcoming %}
+        <ul class="list-unstyled mb-0" aria-label="Tasks due soon">
+          {% for task in upcoming %}
+          <li class="task-item px-3 py-3 border-bottom priority-{{ task.get_priority_display|lower }}">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+              <div class="flex-grow-1 min-width-0">
+                <a href="{% url 'tasks:task_detail' task.pk %}"
+                   class="fw-semibold text-decoration-none text-dark d-block text-truncate">
+                  {{ task.title }}
+                </a>
+                {% if task.course %}
+                <span class="course-chip mt-1" style="color:{{ task.course.color }};">
+                  {{ task.course.name }}
+                </span>
+                {% endif %}
+              </div>
+              {% if task.due_date %}
+              <div class="flex-shrink-0 text-end">
+                <time data-due="{{ task.due_date|date:'c' }}" class="countdown-badge normal"
+                      datetime="{{ task.due_date|date:'c' }}">
+                  {{ task.due_date|date:"M j" }}
+                </time>
+              </div>
+              {% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="p-4 text-center text-muted">
+          <i class="bi bi-calendar-check fs-2 d-block mb-2 text-success" aria-hidden="true"></i>
+          <p class="mb-0 small fw-semibold">Nothing due in the next 7 days!</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ── Overdue ── -->
+    <div class="col-12 col-lg-6">
+      <div class="sp-card h-100">
+        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+          <h2 class="h6 fw-bold mb-0 d-flex align-items-center gap-2">
+            <i class="bi bi-exclamation-triangle text-danger" aria-hidden="true"></i>Overdue
+          </h2>
+          <a href="{% url 'tasks:task_list' %}?status=todo" class="btn btn-sm btn-outline-danger">View all</a>
+        </div>
+
+        {% if overdue %}
+        <ul class="list-unstyled mb-0" aria-label="Overdue tasks">
+          {% for task in overdue %}
+          <li class="task-item px-3 py-3 border-bottom priority-urgent">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+              <div class="flex-grow-1 min-width-0">
+                <a href="{% url 'tasks:task_detail' task.pk %}"
+                   class="fw-semibold text-decoration-none text-dark d-block text-truncate">
+                  {{ task.title }}
+                </a>
+                {% if task.course %}
+                <span class="course-chip mt-1" style="color:{{ task.course.color }};">
+                  {{ task.course.name }}
+                </span>
+                {% endif %}
+              </div>
+              {% if task.due_date %}
+              <time data-due="{{ task.due_date|date:'c' }}" class="countdown-badge overdue"
+                    datetime="{{ task.due_date|date:'c' }}">
+                {{ task.due_date|date:"M j" }}
+              </time>
+              {% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="p-4 text-center text-muted">
+          <i class="bi bi-emoji-smile fs-2 d-block mb-2 text-success" aria-hidden="true"></i>
+          <p class="mb-0 small fw-semibold">No overdue tasks — great work!</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Empty state (new user) ── -->
+  {% if stats.total == 0 %}
+  <div class="sp-card p-5 text-center mt-4 animate-fade-in-up">
+    <i class="bi bi-journal-plus text-primary icon-xxl" aria-hidden="true"></i>
+    <h2 class="h4 fw-bold mt-3 mb-2">You're all set up!</h2>
+    <p class="text-muted mb-4 mx-auto mw-prose">
+      Start by adding your university courses, then create tasks to track assignments and deadlines.
+    </p>
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+      <a href="{% url 'tasks:course_create' %}" class="btn btn-outline-primary">
+        <i class="bi bi-book me-1" aria-hidden="true"></i>Add a Course
+      </a>
+      <a href="{% url 'tasks:task_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Create a Task
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

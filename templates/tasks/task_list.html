@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Tasks  -  Study Planner{% endblock %}
+{% block meta_description %}Manage and track all your study tasks and assignments.{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  {# WCAG 2.4.6: Visible page heading #}
+  <div class="page-header">
+    <h1 class="h3 fw-bold mb-0">Tasks</h1>
+    <a href="{% url 'tasks:task_create' %}" class="btn btn-primary">
+      <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>New Task
+    </a>
+  </div>
+
+  <!-- WCAG 4.1.3 - Status Messages: Screen readers announce task count after filter changes -->
+  <div
+    role="status"
+    aria-live="polite"
+    aria-atomic="true"
+    class="sr-only"
+    id="filter-status"
+  >
+    {% if tasks %}Showing {{ tasks|length }} task{{ tasks|length|pluralize }}.{% else %}No tasks found.{% endif %}
+  </div>
+
+  {# ── Filter bar (WCAG 1.3.1, 2.4.6) ── #}
+  <form
+    method="get"
+    action="{% url 'tasks:task_list' %}"
+    class="sp-card p-3 mb-4"
+    role="search"
+    aria-label="Filter and search tasks"
+    id="filter-form"
+  >
+    <div class="row g-2 align-items-end">
+
+      {# Search #}
+      <div class="col-12 col-md-4">
+        <label for="q" class="form-label small fw-semibold">Search</label>
+        <div class="input-group">
+          <span class="input-group-text" aria-hidden="true">
+            <i class="bi bi-search"></i>
+          </span>
+          <input
+            type="search"
+            id="q"
+            name="q"
+            class="form-control"
+            placeholder="Search tasks - "
+            value="{{ filters.q }}"
+            aria-label="Search tasks by title or description"
+          />
+        </div>
+      </div>
+
+      {# Course #}
+      <div class="col-6 col-md-2">
+        <label for="f-course" class="form-label small fw-semibold">Course</label>
+        <select id="f-course" name="course" class="form-select form-select-sm filter-autosubmit"
+                aria-label="Filter by course">
+          <option value="">All courses</option>
+          {% for c in courses %}
+            <option value="{{ c.pk }}" {% if filters.course == c.pk|stringformat:"s" %}selected{% endif %}>
+              {{ c.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {# Priority #}
+      <div class="col-6 col-md-2">
+        <label for="f-priority" class="form-label small fw-semibold">Priority</label>
+        <select id="f-priority" name="priority" class="form-select form-select-sm filter-autosubmit"
+                aria-label="Filter by priority">
+          <option value="">All priorities</option>
+          {% for val, label in priority_choices %}
+            <option value="{{ val }}" {% if filters.priority == val|stringformat:"s" %}selected{% endif %}>
+              {{ label }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {# Status #}
+      <div class="col-6 col-md-2">
+        <label for="f-status" class="form-label small fw-semibold">Status</label>
+        <select id="f-status" name="status" class="form-select form-select-sm filter-autosubmit"
+                aria-label="Filter by status">
+          <option value="">All statuses</option>
+          {% for val, label in status_choices %}
+            <option value="{{ val }}" {% if filters.status == val %}selected{% endif %}>
+              {{ label }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      {# Sort #}
+      <div class="col-6 col-md-1">
+        <label for="f-sort" class="form-label small fw-semibold">Sort</label>
+        <select id="f-sort" name="sort" class="form-select form-select-sm filter-autosubmit"
+                aria-label="Sort tasks">
+          <option value="due_date"  {% if filters.sort == "due_date"  %}selected{% endif %}>Due (earliest first)</option>
+          <option value="-due_date" {% if filters.sort == "-due_date" %}selected{% endif %}>Due (latest first)</option>
+          <option value="priority"  {% if filters.sort == "priority"  %}selected{% endif %}>Priority</option>
+          <option value="title"     {% if filters.sort == "title"     %}selected{% endif %}>Title A-Z</option>
+        </select>
+      </div>
+
+      <div class="col-12 col-md-1 d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm w-100">
+          <span class="sr-only">Apply </span>Filter
+        </button>
+      </div>
+    </div>
+
+    {# Group tabs (WCAG 1.3.1  -  conveyed via aria-pressed, not colour alone) #}
+    <div class="mt-3 d-flex gap-2 flex-wrap" role="group" aria-label="View by date range">
+      {% with g=filters.group %}
+      <a href="?q={{ filters.q }}&course={{ filters.course }}&priority={{ filters.priority }}&status={{ filters.status }}&sort={{ filters.sort }}&group=all"
+         class="btn btn-sm {% if g == 'all' or not g %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+         aria-pressed="{% if g == 'all' or not g %}true{% else %}false{% endif %}">All</a>
+      <a href="?q={{ filters.q }}&course={{ filters.course }}&priority={{ filters.priority }}&status={{ filters.status }}&sort={{ filters.sort }}&group=today"
+         class="btn btn-sm {% if g == 'today' %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+         aria-pressed="{% if g == 'today' %}true{% else %}false{% endif %}">Today</a>
+      <a href="?q={{ filters.q }}&course={{ filters.course }}&priority={{ filters.priority }}&status={{ filters.status }}&sort={{ filters.sort }}&group=week"
+         class="btn btn-sm {% if g == 'week' %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+         aria-pressed="{% if g == 'week' %}true{% else %}false{% endif %}">This Week</a>
+      {% endwith %}
+      {% if filters.q or filters.course or filters.priority or filters.status %}
+        <a href="{% url 'tasks:task_list' %}" class="btn btn-sm btn-outline-danger ms-auto">
+          <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Clear filters
+        </a>
+      {% endif %}
+    </div>
+  </form>
+
+  {# ── Task list ── #}
+  {% if tasks %}
+  <!-- WCAG 1.3.1 - role="list" + role="listitem" used instead of ul/li for Bootstrap flex compatibility -->
+  <div
+    class="sp-card"
+    role="list"
+    aria-label="Task list, {{ tasks|length }} item{{ tasks|length|pluralize }}"
+    id="task-list-container"
+  >
+    {% for task in tasks %}
+    <div
+      class="task-item {% if task.is_done %}task-row-done{% endif %} priority-{{ task.get_priority_display|lower }} p-3 border-bottom d-flex align-items-start gap-3"
+      role="listitem"
+      id="task-row-{{ task.pk }}"
+      {# WCAG 4.1.2  -  convey done state to AT without relying on colour alone #}
+      aria-label="{{ task.title }}{% if task.is_done %}  -  completed{% elif task.is_overdue %}  -  overdue{% endif %}"
+    >
+
+      <!-- WCAG 4.1.2 - aria-pressed reflects done state; aria-label is action-oriented -->
+      <button
+        class="btn p-0 border-0 toggle-btn flex-shrink-0 mt-1"
+        data-task-id="{{ task.pk }}"
+        data-url="{% url 'tasks:task_toggle' task.pk %}"
+        aria-pressed="{{ task.is_done|yesno:'true,false' }}"
+        aria-label="{% if task.is_done %}Mark '{{ task.title }}' as not done{% else %}Mark '{{ task.title }}' as done{% endif %}"
+      >
+        <i
+          class="bi {% if task.is_done %}bi-check-circle-fill text-success{% else %}bi-circle toggle-icon-default{% endif %} fs-5"
+          aria-hidden="true"
+        ></i>
+      </button>
+
+      {# Task info #}
+      <div class="flex-grow-1 min-width-0">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <a
+            href="{% url 'tasks:task_detail' task.pk %}"
+            class="task-title fw-semibold text-decoration-none text-dark"
+            aria-describedby="task-meta-{{ task.pk }}"
+          >
+            {{ task.title }}
+          </a>
+
+          {# Priority  -  shown as badge AND described in aria-label on list item above #}
+          <span
+            class="badge badge-priority-{{ task.get_priority_display|lower }} rounded-pill small"
+            aria-label="{{ task.get_priority_display }} priority"
+          >
+            {{ task.get_priority_display }}
+          </span>
+
+          {# Status  -  WCAG 1.4.1: not colour alone; text label included #}
+          <span
+            class="badge rounded-pill small status-badge
+              {% if task.status == 'done' %}bg-success
+              {% elif task.status == 'in_progress' %}bg-info badge-in-progress
+              {% else %}bg-secondary{% endif %}"
+          >
+            {{ task.get_status_display }}
+          </span>
+        </div>
+
+        {# Supplementary meta  -  associated to the task link via aria-describedby #}
+        <div class="d-flex align-items-center gap-3 mt-1 flex-wrap" id="task-meta-{{ task.pk }}">
+          {% if task.course %}
+            <span class="course-chip" style="color:{{ task.course.color }}">
+              <i class="bi bi-circle-fill me-1 icon-dot" aria-hidden="true"></i>
+              {{ task.course.name }}
+            </span>
+          {% endif %}
+          {% if task.due_date %}
+            <time
+              data-due="{{ task.due_date|date:'c' }}"
+              datetime="{{ task.due_date|date:'c' }}"
+              class="countdown-badge normal"
+            >{{ task.due_date|date:"M j" }}</time>
+            {% if task.is_overdue %}
+              <span class="overdue-label small" role="img" aria-label="Overdue">
+                <i class="bi bi-exclamation-circle me-1" aria-hidden="true"></i>Overdue
+              </span>
+            {% endif %}
+          {% endif %}
+        </div>
+      </div>
+
+      {# Actions  -  each button has a unique accessible name #}
+      <div class="d-flex gap-1 flex-shrink-0" role="group" aria-label="Actions for {{ task.title }}">
+        <a
+          href="{% url 'tasks:task_edit' task.pk %}"
+          class="btn btn-sm btn-outline-secondary"
+          aria-label="Edit task: {{ task.title }}"
+        >
+          <i class="bi bi-pencil" aria-hidden="true"></i>
+          <span class="sr-only">Edit</span>
+        </a>
+        <button
+          class="btn btn-sm btn-outline-danger"
+          data-bs-toggle="modal"
+          data-bs-target="#deleteModal"
+          data-task-id="{{ task.pk }}"
+          data-task-title="{{ task.title }}"
+          data-delete-url="{% url 'tasks:task_delete' task.pk %}"
+          aria-label="Delete task: {{ task.title }}"
+          aria-haspopup="dialog"
+        >
+          <i class="bi bi-trash" aria-hidden="true"></i>
+          <span class="sr-only">Delete</span>
+        </button>
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="sp-card p-5 text-center text-sp-secondary">
+    <i class="bi bi-inbox fs-1 d-block mb-3" aria-hidden="true"></i>
+    <h2 class="h5 fw-semibold">No tasks found</h2>
+    <p class="mb-3">
+      {% if filters.q or filters.course or filters.priority or filters.status %}
+        Try adjusting your filters, or
+        <a href="{% url 'tasks:task_list' %}">clear all filters</a>.
+      {% else %}
+        You haven't added any tasks yet.
+      {% endif %}
+    </p>
+    <a href="{% url 'tasks:task_create' %}" class="btn btn-primary">
+      <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Create your first task
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- Delete Modal - WCAG 4.1.2: role="dialog", aria-modal, aria-labelledby; WCAG 2.1.2: Bootstrap focus trap -->
+<div
+  class="modal fade"
+  id="deleteModal"
+  tabindex="-1"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="deleteModalLabel"
+  aria-describedby="deleteModalDesc"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h2 class="modal-title h6 fw-bold" id="deleteModalLabel">Delete Task</h2>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close delete dialog"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p id="deleteModalDesc">
+          Are you sure you want to delete <strong id="deleteTaskTitle"></strong>?
+        </p>
+        <p class="small mb-0 text-sp-muted">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          data-bs-dismiss="modal"
+        >Cancel</button>
+        <form id="deleteForm" method="post" action="">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">
+            <i class="bi bi-trash me-1" aria-hidden="true"></i>Delete
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/tasks.js' %}" defer></script>
+{% endblock %}

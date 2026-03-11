@@ -1,0 +1,120 @@
+{% extends "accounts/auth_base.html" %}
+{% load static %}
+
+{% block title %}Log In - Study Planner{% endblock %}
+{% block meta_description %}Log in to Study Planner to manage your assignments and deadlines.{% endblock %}
+
+{% block auth_content %}
+  {# 鈹�鈹� WCAG 2.4.6: Descriptive heading 鈹�鈹� #}
+  <h2 class="h5 fw-bold mb-1 text-center" id="login-heading">Welcome back</h2>
+  <p class="text-center small mb-4 text-sp-muted">
+    Sign in to your Study Planner account
+  </p>
+
+  {# 鈹�鈹� Required field notice (WCAG 3.3.2) 鈹�鈹� #}
+  <p class="field-required-note">
+    All fields are required.
+  </p>
+
+  <form
+    method="post"
+    action="{% url 'accounts:login' %}"
+    novalidate
+    aria-labelledby="login-heading"
+    aria-describedby="login-desc"
+    id="login-form"
+  >
+    {% csrf_token %}
+    {% if next %}<input type="hidden" name="next" value="{{ next }}" />{% endif %}
+
+    {# Hidden description for screen readers #}
+    <span id="login-desc" class="sr-only">
+      Enter your username and password to access your study tasks.
+    </span>
+
+    {# 鈹�鈹� Non-field errors (WCAG 3.3.1 Error Identification) 鈹�鈹� #}
+    {% if form.non_field_errors %}
+    <div
+      class="alert alert-danger d-flex align-items-start gap-2 mb-3"
+      role="alert"
+      aria-live="assertive"
+      aria-atomic="true"
+    >
+      <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1" aria-hidden="true"></i>
+      <div>
+        <strong>Sign-in failed.</strong>
+        {% for error in form.non_field_errors %}
+          <div>{{ error }}</div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {# 鈹�鈹� Username 鈹�鈹� #}
+    <div class="mb-3">
+      {# WCAG 1.3.1: label explicitly associated via for/id #}
+      <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">
+        Username
+      </label>
+      {{ form.username }}
+      {% if form.username.errors %}
+        <div
+          class="field-error"
+          id="{{ form.username.id_for_label }}-error"
+          role="alert"
+          aria-live="polite"
+        >
+          <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
+          {% for error in form.username.errors %}{{ error }}{% endfor %}
+        </div>
+      {% endif %}
+    </div>
+
+    {# 鈹�鈹� Password 鈹�鈹� #}
+    <div class="mb-4">
+      <div class="d-flex justify-content-between align-items-baseline">
+        <label for="{{ form.password.id_for_label }}" class="form-label fw-semibold mb-0">
+          Password
+        </label>
+      </div>
+      <div class="input-group mt-1">
+        {{ form.password }}
+        {# Toggle visibility 鈥?labelled with aria-label that changes dynamically #}
+        <button
+          class="btn btn-outline-secondary pw-toggle-btn"
+          type="button"
+          aria-label="Show password"
+          aria-controls="{{ form.password.id_for_label }}"
+          aria-pressed="false"
+          data-input-id="{{ form.password.id_for_label }}"
+        >
+          <i class="bi bi-eye" aria-hidden="true"></i>
+        </button>
+      </div>
+      {% if form.password.errors %}
+        <div
+          class="field-error"
+          id="{{ form.password.id_for_label }}-error"
+          role="alert"
+          aria-live="polite"
+        >
+          <i class="bi bi-exclamation-circle-fill" aria-hidden="true"></i>
+          {% for error in form.password.errors %}{{ error }}{% endfor %}
+        </div>
+      {% endif %}
+    </div>
+
+    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+      <i class="bi bi-box-arrow-in-right me-2" aria-hidden="true"></i>Log In
+    </button>
+  </form>
+{% endblock %}
+
+{% block auth_footer %}
+  Don't have an account?
+  <a href="{% url 'accounts:register' %}" class="fw-semibold">Sign up for free</a>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/auth.js' %}" defer></script>
+{% endblock %}

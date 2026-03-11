@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-sm-10 col-md-7 col-lg-5">
+
+      <!-- Brand header -->
+      <div class="text-center mb-4">
+        <a href="{% url 'accounts:login' %}" class="text-decoration-none d-inline-flex flex-column align-items-center gap-1">
+          <div class="rounded-circle d-flex align-items-center justify-content-center avatar-icon avatar-brand">
+            <i class="bi bi-journal-bookmark-fill text-white fs-4" aria-hidden="true"></i>
+          </div>
+          <span class="h5 fw-bold mt-1 text-dark">Study Planner</span>
+        </a>
+        <p class="text-muted small mt-1">Stay focused. Stay organized.</p>
+      </div>
+
+      <!-- Card -->
+      <div class="auth-card animate-fade-in-up">
+        {% block auth_content %}{% endblock %}
+      </div>
+
+      <p class="text-center text-muted small mt-3">
+        {% block auth_footer %}{% endblock %}
+      </p>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
